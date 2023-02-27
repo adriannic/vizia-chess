@@ -77,48 +77,52 @@ impl Chess {
                     );
                 }
             });
-            HStack::new(cx, |cx| {
-                Label::new(
-                    cx,
-                    Chess::board.map(|value| format!("{:?}", value.status())),
-                )
-                .height(Auto)
-                .width(Stretch(1.0))
-                .color(Color::white());
-                Label::new(
-                    cx,
-                    Chess::board.map(|value| format!("{:?}", value.side_to_move())),
-                )
-                .size(Auto)
-                .color(Color::white());
-            })
-            .height(Auto)
-            .width(Stretch(1.0));
             VStack::new(cx, |cx| {
-                for y in 0..8 {
-                    HStack::new(cx, |cx| {
-                        for x in 0..8 {
-                            Element::new(cx)
-                                .height(Stretch(1.0))
-                                .width(Stretch(0.125))
-                                .class(&format!("tile-{}", (x + y) % 2))
-                                .class("tile")
-                                .on_press(move |cx| cx.emit(ChessEvent::TileClicked(x, 7 - y)))
-                                .image(
-                                    Chess::images
-                                        .map(move |value| value[(y * 8 + x) as usize].clone()),
-                                )
-                                .checked(Chess::selected.map(move |value| match value {
-                                    Some((i, j)) => (&x, &(7 - y)) == (i, j),
-                                    None => false,
-                                }));
-                        }
-                    })
+                HStack::new(cx, |cx| {
+                    Label::new(
+                        cx,
+                        Chess::board.map(|value| format!("{:?}", value.status())),
+                    )
+                    .height(Auto)
                     .width(Stretch(1.0))
-                    .height(Stretch(0.125));
-                }
+                    .color(Color::white());
+                    Label::new(
+                        cx,
+                        Chess::board.map(|value| format!("{:?}", value.side_to_move())),
+                    )
+                    .size(Auto)
+                    .color(Color::white());
+                })
+                .height(Auto)
+                .width(Stretch(1.0));
+                VStack::new(cx, |cx| {
+                    for y in 0..8 {
+                        HStack::new(cx, |cx| {
+                            for x in 0..8 {
+                                Element::new(cx)
+                                    .height(Stretch(1.0))
+                                    .width(Stretch(0.125))
+                                    .class(&format!("tile-{}", (x + y) % 2))
+                                    .class("tile")
+                                    .on_press(move |cx| cx.emit(ChessEvent::TileClicked(x, 7 - y)))
+                                    .image(
+                                        Chess::images
+                                            .map(move |value| value[(y * 8 + x) as usize].clone()),
+                                    )
+                                    .checked(Chess::selected.map(move |value| match value {
+                                        Some((i, j)) => (&x, &(7 - y)) == (i, j),
+                                        None => false,
+                                    }));
+                            }
+                        })
+                        .width(Stretch(1.0))
+                        .height(Stretch(0.125));
+                    }
+                })
+                .class("board")
+                .size(Pixels(500.0));
             })
-            .class("board");
+            .size(Auto);
         })
     }
 }
