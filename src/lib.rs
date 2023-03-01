@@ -4,30 +4,32 @@ use chess::{BitBoard, Board, ChessMove, Square};
 use vizia::{image, prelude::*};
 
 enum ChessEvent {
-    TileClicked(i32, i32),
+    TileClicked(i32),
 }
 
 #[derive(Lens)]
 pub struct Chess {
     board: Board,
     images: [String; 64],
-    selected: Option<(i32, i32)>,
+    selected: Option<i32>,
 }
 
 impl View for Chess {
     fn event(&mut self, _cx: &mut EventContext, event: &mut Event) {
         event.map(|chess_event, meta| match chess_event {
-            ChessEvent::TileClicked(x, y) => {
-                println!("Tile on position ({x}, {y}) clicked!");
-                let pos = BitBoard::from_square(unsafe { Square::new((y * 8 + x) as u8) });
-                if let Some((i, j)) = self.selected {
-                    if (x, y) == (&i, &j) {
+            ChessEvent::TileClicked(pos) => {
+                let pos = *pos;
+                let pos_board = BitBoard::from_square(unsafe { Square::new(pos as u8) });
+                if let Some(selected_pos) = self.selected {
+                    if pos == selected_pos {
                         self.selected = None
-                    } else if pos == self.board.color_combined(self.board.side_to_move()) & pos {
-                        self.selected = Some((*x, *y));
+                    } else if pos_board
+                        == self.board.color_combined(self.board.side_to_move()) & pos_board
+                    {
+                        self.selected = Some(pos);
                     } else {
-                        let to = pos.to_square();
-                        let from = unsafe { Square::new((j * 8 + i) as u8) };
+                        let to = pos_board.to_square();
+                        let from = unsafe { Square::new(selected_pos as u8) };
                         let new_move = ChessMove::new(from, to, None);
                         println!("Move: {new_move}");
                         if self.board.legal(new_move) {
@@ -38,8 +40,9 @@ impl View for Chess {
                         }
                     }
                 } else {
-                    if pos == self.board.color_combined(self.board.side_to_move()) & pos {
-                        self.selected = Some((*x, *y));
+                    if pos_board == self.board.color_combined(self.board.side_to_move()) & pos_board
+                    {
+                        self.selected = Some(pos);
                     }
                 }
                 meta.consume();
@@ -104,13 +107,15 @@ impl Chess {
                                     .width(Stretch(0.125))
                                     .class(&format!("tile-{}", (x + y) % 2))
                                     .class("tile")
-                                    .on_press(move |cx| cx.emit(ChessEvent::TileClicked(x, 7 - y)))
+                                    .on_press(move |cx| {
+                                        cx.emit(ChessEvent::TileClicked((7 - y) * 8 + x))
+                                    })
                                     .image(
                                         Chess::images
                                             .map(move |value| value[(y * 8 + x) as usize].clone()),
                                     )
                                     .checked(Chess::selected.map(move |value| match value {
-                                        Some((i, j)) => (&x, &(7 - y)) == (i, j),
+                                        Some(selected_pos) => *selected_pos == (7 - y) * 8 + x,
                                         None => false,
                                     }));
                             }
