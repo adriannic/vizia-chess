@@ -1,31 +1,67 @@
 :root {
-    background-color: #080010;
-}
-
-.tile-0 {
-    background-color: #bbb;
-}
-
-.tile-1 {
     background-color: #333;
 }
 
-.tile {
-    border-width: 0px;
+.board-frame {
+  background-color: #111;
+  border-width: 5px;
+  border-radius: 5px;
+  border-color: #080810;
+  space: 1s;
 }
 
-.tile:hover {
-    border-width: 2px;
-    border-color: #fff;
+.tile-0 {
+  background-color: #aaa;
 }
 
-.tile:checked {
-    background-color: #4c4;
+.tile-1 {
+  background-color: #333;
+}
+
+element {
+  border-width: 0px;
+  width: 1s;
+  height: 1s;
+}
+
+element:hover {
+  border-width: 2px;
+  border-color: #fff;
+}
+
+element:checked {
+  background-color: #4c4;
 }
 
 .board {
-    border-width: 10px;
-    border-color: #111;
-    border-radius: 5px;
+  border-width: 5px;
+  border-color: #080810;
+  border-radius: 5px;
+  width: 500px;
+  height: 500px;
+  left: 10px;
+  right: 20px;
 }
 
+.board-settings {
+  child-left: 1s;
+  child-right: 1s;
+  col-between: 5px;
+  top: 5px;
+  bottom: 15px;
+}
+
+.board-text {
+  color: #fff;
+}
+
+.board-row {
+  width: 1s;
+  height: 0.125s;
+}
+
+.board-state {
+  child-left: 1s;
+  child-right: 1s;
+  col-between: 1s;
+}

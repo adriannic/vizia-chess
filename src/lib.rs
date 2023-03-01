@@ -103,18 +103,14 @@ impl Chess {
                         cx,
                         Chess::board.map(|value| format!("{:?}", value.status())),
                     )
-                    .height(Auto)
-                    .width(Stretch(1.0))
-                    .color(Color::white());
+                    .class("board-text");
                     Label::new(
                         cx,
                         Chess::board.map(|value| format!("{:?}", value.side_to_move())),
                     )
-                    .size(Auto)
-                    .color(Color::white());
+                    .class("board-text");
                 })
-                .height(Auto)
-                .width(Stretch(1.0));
+                .class("board-state");
                 // Board
                 VStack::new(cx, |cx| {
                     for y in 0..8 {
@@ -123,10 +119,7 @@ impl Chess {
                             for x in 0..8 {
                                 // Square
                                 Element::new(cx)
-                                    .height(Stretch(1.0))
-                                    .width(Stretch(0.125))
                                     .class(&format!("tile-{}", (x + y) % 2))
-                                    .class("tile")
                                     .on_press(move |cx| {
                                         cx.emit(ChessEvent::TileClicked((7 - y) * 8 + x))
                                     })
@@ -143,29 +136,25 @@ impl Chess {
                                     }));
                             }
                         })
-                        .width(Stretch(1.0))
-                        .height(Stretch(0.125));
+                        .class("board-row");
                     }
                 })
-                .class("board")
-                .size(Pixels(500.0));
+                .class("board");
 
                 HStack::new(cx, |cx| {
                     Checkbox::new(cx, Chess::should_flip)
                         .on_toggle(|cx| cx.emit(ChessEvent::ToggleFlipping));
-                    Label::new(cx, "Board flipping").color(Color::white());
+                    Label::new(cx, "Board flipping").class("board-text");
                 })
-                .child_left(Stretch(0.5))
-                .child_right(Stretch(0.5));
+                .class("board-settings");
             })
-            .size(Auto);
+            .class("board-frame");
         })
     }
 
     fn update_board(&mut self) {
         self.images = get_paths_from_pos(&self.board);
-        if self.should_flip && self.board.side_to_move() == chess::Color::Black
-        {
+        if self.should_flip && self.board.side_to_move() == chess::Color::Black {
             self.images.reverse();
         }
     }
