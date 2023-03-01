@@ -6,6 +6,7 @@ use vizia::{image, prelude::*};
 enum ChessEvent {
     TileClicked(i32),
     ToggleFlipping,
+    Reset,
 }
 
 #[derive(Lens)]
@@ -13,6 +14,7 @@ pub struct Chess {
     board: Board,
     images: [String; 64],
     selected: Option<(i32, bool)>,
+    on_check: Option<(i32, bool)>,
     should_flip: bool,
 }
 
@@ -38,9 +40,7 @@ impl View for Chess {
                         let to = pos_board.to_square();
                         let from = unsafe { Square::new(selected_pos as u8) };
                         let new_move = ChessMove::new(from, to, None);
-                        println!("Move: {new_move}");
                         if self.board.legal(new_move) {
-                            println!("Move is legal!");
                             self.board = self.board.make_move_new(new_move);
                             self.update_board();
                             self.selected = None;
@@ -62,6 +62,12 @@ impl View for Chess {
                 self.update_board();
                 meta.consume();
             }
+            ChessEvent::Reset => {
+                self.board = Board::default();
+                self.update_board();
+                self.selected = None;
+                meta.consume();
+            }
         });
     }
 }
@@ -72,6 +78,7 @@ impl Chess {
             board: Board::default(),
             images: get_paths_from_pos(&Board::default()),
             selected: None,
+            on_check: None,
             should_flip: true,
         }
         .build(cx, |cx| {
@@ -102,13 +109,11 @@ impl Chess {
                     Label::new(
                         cx,
                         Chess::board.map(|value| format!("{:?}", value.status())),
-                    )
-                    .class("board-text");
+                    );
                     Label::new(
                         cx,
                         Chess::board.map(|value| format!("{:?}", value.side_to_move())),
-                    )
-                    .class("board-text");
+                    );
                 })
                 .class("board-state");
                 // Board
@@ -120,6 +125,18 @@ impl Chess {
                                 // Square
                                 Element::new(cx)
                                     .class(&format!("tile-{}", (x + y) % 2))
+                                    .toggle_class(
+                                        "on-check",
+                                        Chess::on_check.map(move |value| match value {
+                                            Some((checked_pos, flipped)) if *flipped => {
+                                                *checked_pos == 63 - ((7 - y) * 8 + x)
+                                            }
+                                            Some((checked_pos, _)) => {
+                                                *checked_pos == (7 - y) * 8 + x
+                                            }
+                                            None => false,
+                                        }),
+                                    )
                                     .on_press(move |cx| {
                                         cx.emit(ChessEvent::TileClicked((7 - y) * 8 + x))
                                     })
@@ -142,9 +159,14 @@ impl Chess {
                 .class("board");
 
                 HStack::new(cx, |cx| {
+                    Button::new(
+                        cx,
+                        |cx| cx.emit(ChessEvent::Reset),
+                        |cx| Label::new(cx, "Reset").color(Color::white()),
+                    );
                     Checkbox::new(cx, Chess::should_flip)
                         .on_toggle(|cx| cx.emit(ChessEvent::ToggleFlipping));
-                    Label::new(cx, "Board flipping").class("board-text");
+                    Label::new(cx, "Board flipping");
                 })
                 .class("board-settings");
             })
@@ -156,6 +178,15 @@ impl Chess {
         self.images = get_paths_from_pos(&self.board);
         if self.should_flip && self.board.side_to_move() == chess::Color::Black {
             self.images.reverse();
+        }
+        if self.board.checkers().clone().next().is_some() {
+            let king_pos = self.board.king_square(self.board.side_to_move()).to_int();
+            self.on_check = Some((
+                king_pos as i32,
+                self.should_flip && self.board.side_to_move() == chess::Color::Black,
+            ));
+        } else {
+            self.on_check = None;
         }
     }
 }
