@@ -5,6 +5,7 @@ use vizia::{image, prelude::*};
 
 enum ChessEvent {
     TileClicked(i32),
+    ToggleFlipping,
 }
 
 #[derive(Lens)]
@@ -12,19 +13,21 @@ pub struct Chess {
     board: Board,
     images: [String; 64],
     selected: Option<(i32, bool)>,
+    should_flip: bool,
 }
 
 impl View for Chess {
     fn event(&mut self, _cx: &mut EventContext, event: &mut Event) {
         event.map(|chess_event, meta| match chess_event {
             ChessEvent::TileClicked(pos) => {
-                let pos = if self.board.side_to_move() == chess::Color::White {
-                    *pos
-                } else {
+                let pos = if self.should_flip && self.board.side_to_move() == chess::Color::Black {
                     63 - pos
+                } else {
+                    *pos
                 };
                 let pos_board = BitBoard::from_square(unsafe { Square::new(pos as u8) });
                 if let Some((selected_pos, flipped)) = self.selected {
+                    let flipped = self.should_flip && flipped;
                     if pos == selected_pos {
                         self.selected = None
                     } else if pos_board
@@ -39,20 +42,24 @@ impl View for Chess {
                         if self.board.legal(new_move) {
                             println!("Move is legal!");
                             self.board = self.board.make_move_new(new_move);
-                            self.images = get_paths_from_pos(&self.board);
-                            if self.board.side_to_move() == chess::Color::Black {
-                                self.images.reverse();
-                            }
+                            self.update_board();
                             self.selected = None;
                         }
                     }
                 } else {
                     if pos_board == self.board.color_combined(self.board.side_to_move()) & pos_board
                     {
-                        self.selected =
-                            Some((pos, self.board.side_to_move() == chess::Color::Black));
+                        self.selected = Some((
+                            pos,
+                            self.should_flip && self.board.side_to_move() == chess::Color::Black,
+                        ));
                     }
                 }
+                meta.consume();
+            }
+            ChessEvent::ToggleFlipping => {
+                self.should_flip ^= true;
+                self.update_board();
                 meta.consume();
             }
         });
@@ -65,6 +72,7 @@ impl Chess {
             board: Board::default(),
             images: get_paths_from_pos(&Board::default()),
             selected: None,
+            should_flip: true,
         }
         .build(cx, |cx| {
             cx.add_stylesheet("./assets/stylesheets/styles.css")
@@ -141,9 +149,25 @@ impl Chess {
                 })
                 .class("board")
                 .size(Pixels(500.0));
+
+                HStack::new(cx, |cx| {
+                    Checkbox::new(cx, Chess::should_flip)
+                        .on_toggle(|cx| cx.emit(ChessEvent::ToggleFlipping));
+                    Label::new(cx, "Board flipping").color(Color::white());
+                })
+                .child_left(Stretch(0.5))
+                .child_right(Stretch(0.5));
             })
             .size(Auto);
         })
+    }
+
+    fn update_board(&mut self) {
+        self.images = get_paths_from_pos(&self.board);
+        if self.should_flip && self.board.side_to_move() == chess::Color::Black
+        {
+            self.images.reverse();
+        }
     }
 }
 
